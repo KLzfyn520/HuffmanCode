@@ -54,16 +54,14 @@ void compress() {
 	//读入数据
 	ifstream inFile(sourceFileName);
 	if (!inFile.is_open()) {
-		cout << "can't open file" << endl;
+		throw exception("can't open source file");
+		return;
 	}
 	else {
 		//创建频率数组
 		int count;
 		char curr;
 		KVpair<int, string> **p;
-
-		inFile.clear();
-		inFile.seekg(ios::beg);
 
 		int *freq = new int[270];
 		for (int i = 0; i < 270; i++)
@@ -96,6 +94,11 @@ void compress() {
 			}
 		}
 
+		if (count == 1) {
+			throw exception("there is no content in source file");
+			return;
+		}
+
 		//HuffTree<int> **treeArray = new HuffTree<int>*[count];
 		//for (int i = 0, count = 0; i < 270; i++) {
 		//	if (freq[i] != 0) {
@@ -122,7 +125,8 @@ void compress() {
 		//写入数据
 		ofstream outFile(codeFileName);
 		if (!outFile.is_open()) {
-			cout << "can't open file" << endl;
+			throw exception("can't open code file");
+			return;
 		}
 		else {
 			outFile << count;
@@ -140,7 +144,6 @@ void compress() {
 					outFile << c;
 				}
 			}
-			outFile << " ";
 
 			//写入编译后数据
 			unsigned char tmp_code, out_code;
@@ -208,7 +211,7 @@ void compress() {
 	}
 	inFile.close();
 
-	cout << "have finished" << endl;
+	cout << "compressing has finished" << endl;
 }
 void decompress() {
 	string codeFileName;
@@ -222,10 +225,12 @@ void decompress() {
 	//读入数据
 	ifstream inFile(codeFileName);
 	if (!inFile.is_open()) {
-		cout << "can't open file" << endl;
+		throw exception("can't open code file");
+		return;
 	}
 	else {
 		int keyNum;
+		int count;
 		int *freq;
 		int *tmpFreq;
 		char curr;
@@ -233,6 +238,11 @@ void decompress() {
 		//读取频率数组
 		keyNum = 0;
 		inFile >> keyNum;
+		if (keyNum == 0) {
+			throw exception("wrong format of Huffman code");
+			return;
+		}
+
 		freq = new int[270];
 		tmpFreq = new int[keyNum-1];
 
@@ -243,12 +253,33 @@ void decompress() {
 			inFile.get(curr);
 			tmpFreq[i] = curr;
 		}
+		//测试频率数组是否符合数量
+		count = 0;
+		for (int i = 0; i < keyNum - 1; i++) {
+			if (tmpFreq[i] != 0)
+				count++;
+		}
+		if (count != keyNum-1) {
+			throw exception("have not enough codes");
+			return;
+		}
+
 		for (int i = 0; i < keyNum-1; i++) {
 			inFile.get(curr);
 			freq[curr] = tmpFreq[i];
 		}
+		//测试频率数组是否符合数量
+		count = 0;
+		for (int i = 0; i < 270; i++) {
+			if (freq[i] != 0)
+				count++;
+		}
+		if (count != keyNum-1) {
+			throw exception("have not enough codes");
+			return;
+		}
+
 		freq[256] = 1;
-		
 		//测试频率数组
 		/*for (int i = 0; i < 270; i++)
 			if (freq[i] != 0) {
@@ -308,22 +339,11 @@ void decompress() {
 			}
 		}*/
 
-		//测试Huffman树
-		//HuffNode<int> *miao, *miao2, *miao3;
-		//miao = dynamic_cast<InitNode<int>*>(root)->right();
-		//miao2 = dynamic_cast<InitNode<int>*>(miao)->left();
-		//miao3 = dynamic_cast<InitNode<int>*>(miao2)->left();
-		//if (dynamic_cast<InitNode<int>*>(miao3)->right()->isLeaf()) {
-		//cout << "haha" << endl;
-		//}
-		//if (dynamic_cast<InitNode<int>*>(miao3)->left()->isLeaf()) {
-		//cout << "haha" << endl;
-		//}
-
 		//写入数据
 		ofstream outFile(targetFileName);
 		if (!outFile.is_open()) {
-			cout << "can't open file" << endl;
+			throw exception("can't open target file");
+			return;
 		}
 		else {
 			int id;
@@ -334,7 +354,6 @@ void decompress() {
 
 			eof = false;
 			node = root;
-			inFile.seekg(1, ios::cur);
 			//读完文件
 			while (!inFile.eof()) {
 				inFile.get(curr);
@@ -378,7 +397,7 @@ void decompress() {
 	}
 	inFile.close();
 
-	cout << "have finished" << endl;
+	cout << "decompressing has finished" << endl;
 }
 int main() {
 	int option = -1;
@@ -411,6 +430,7 @@ int main() {
 		}
 		system("pause");
 	}
+
 	return 0;
 
 }
